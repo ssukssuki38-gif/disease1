@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>질병 발표 성찰 카드</title>
+<style>
+:root{
+  --bg:#f6fbf7; --card:#fff; --ink:#1d2340; --muted:#5a6285; --line:#e1ebe4;
+  --pri:#16855f; --pri-ink:#0f6347; --pri-soft:#e4f6ec;
+  --ok:#15803d; --ok-soft:#e5f7ec; --bad:#be123c; --bad-soft:#ffe9ef; --warm-soft:#fff4dc; --lock:#7c3aed; --lock-soft:#f1eaff;
+}
+*{box-sizing:border-box}
+html{font-size:17px}
+body{margin:0;background:var(--bg);color:var(--ink);line-height:1.65;font-family:"Pretendard","Malgun Gothic","맑은 고딕","Apple SD Gothic Neo","Noto Sans KR",sans-serif;word-break:keep-all}
+button,input,textarea{font:inherit;color:inherit}
+header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+header .in{max-width:860px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+header h1{font-size:1.1rem;margin:0}
+header .sp{flex:1}
+.prog{height:8px;background:#e6eee8;border-radius:99px;overflow:hidden;width:160px}
+.prog i{display:block;height:100%;background:var(--pri);transition:width .3s}
+main{max-width:860px;margin:0 auto;padding:18px 16px 60px}
+h2{font-size:1.5rem;margin:6px 0 4px}
+.lead{color:var(--muted);margin:0 0 16px}
+.group{font-weight:800;color:var(--pri-ink);margin:26px 0 8px;font-size:1.05rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:12px;box-shadow:0 2px 8px rgba(20,80,50,.04)}
+.card.err{border-color:var(--bad);box-shadow:0 0 0 2px var(--bad-soft)}
+.q{font-weight:700;margin-bottom:8px}
+.q .req{color:var(--bad);margin-left:3px}
+.hint{font-size:.88rem;color:var(--muted);margin:-4px 0 8px}
+.lock{display:inline-block;font-size:.75rem;font-weight:800;color:var(--lock);background:var(--lock-soft);border-radius:6px;padding:1px 8px;margin-left:6px;vertical-align:2px}
+.wait{border:2px dashed #c9d8ce;border-radius:16px;padding:16px;color:var(--muted);text-align:center;margin-bottom:12px}
+input[type=text],textarea{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff}
+textarea{min-height:92px;resize:vertical}
+input:focus,textarea:focus{outline:3px solid #bfe9d2;border-color:var(--pri)}
+.opts{display:flex;gap:8px;flex-wrap:wrap}
+.opts.col{flex-direction:column}
+.opt{border:2px solid var(--line);background:#fff;border-radius:12px;padding:9px 16px;cursor:pointer;min-height:44px;font-weight:600;text-align:left}
+.opt.on{border-color:var(--pri);background:var(--pri-soft);color:var(--pri-ink)}
+table.grid{width:100%;border-collapse:collapse;font-size:.95rem}
+table.grid th,table.grid td{padding:8px 4px;text-align:center;border-bottom:1px solid var(--line)}
+table.grid td:first-child,table.grid th:first-child{text-align:left;width:52%}
+.dot{width:38px;height:38px;border-radius:50%;border:2px solid #c9d8ce;background:#fff;cursor:pointer;font-weight:700;color:var(--muted)}
+.dot.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.scale{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.scale .lab{font-size:.85rem;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:12px;padding:12px 18px;font-weight:800;cursor:pointer;background:var(--pri);color:#fff;min-height:48px}
+.btn:hover{background:var(--pri-ink)}
+.btn.ghost{background:#fff;color:var(--pri-ink);border:1.5px solid var(--pri)}
+.stepbox{border-radius:16px;padding:16px 18px;margin-bottom:12px;border:2px solid var(--line);background:#fff}
+.stepbox h3{margin:0 0 6px;font-size:1.1rem}
+.stepbox.done{border-color:var(--ok);background:var(--ok-soft)}
+.fb{border-radius:12px;padding:12px 14px;margin-top:10px;display:none}
+.fb.show{display:block}
+.fb.ok{background:var(--ok-soft);color:#14532d}
+.fb.no{background:var(--bad-soft);color:#881337}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+pre.result{white-space:pre-wrap;background:#f7fbf8;border:1px solid var(--line);border-radius:12px;padding:12px;font-family:inherit;font-size:.92rem;max-height:340px;overflow:auto;margin:10px 0 0}
+.mini{font-size:.85rem;color:var(--muted)}
+.toast{position:fixed;left:50%;top:80px;transform:translateX(-50%) translateY(-20px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:12px;opacity:0;transition:.3s;z-index:50;pointer-events:none;font-weight:700}
+.toast.show{opacity:1;transform:translateX(-50%)}
+</style>
+</head>
+<body>
+<header><div class="in">
+  <h1>📝 질병 조사 발표 성찰 카드</h1><span class="sp"></span>
+  <span class="mini" id="progTxt"></span><div class="prog"><i id="progBar" style="width:0"></i></div>
+</div></header>
+
+<main>
+  <h2>소순호배 질병 조사 발표 돌아보기</h2>
+  <p class="lead">소화계, 순환계, 호흡계, 배설계와 관련된 질병을 조사하고 발표한 활동을 돌아봐요. 정답이 있는 시험이 아니에요. 솔직하게, 내 생각을 자세히 써 주세요.<br>
+  다 쓰면 맨 아래에서 <b>① 선생님께 제출</b>하고, <b>② 패들렛에 성찰 카드를 올려요.</b> <span class="lock">🔒 선생님만</span> 표시가 있는 질문은 패들렛 카드에 들어가지 않아요.</p>
+  <div id="form"></div>
+
+  <div class="group">✅ 마무리</div>
+  <div class="stepbox" id="step1">
+    <h3>① 선생님께 제출하기</h3>
+    <p class="mini" style="margin:0 0 10px">버튼을 누르면 구글 설문지로 내 답이 제출되고, 새 창에 '응답이 기록되었습니다'가 나타나요.</p>
+    <button class="btn" id="submitBtn">📮 선생님께 제출하기</button>
+    <div class="fb" id="submitFb"></div>
+  </div>
+  <div class="stepbox" id="step2">
+    <h3>② 패들렛에 성찰 카드 올리기</h3>
+    <p class="mini" style="margin:0 0 10px"><b>텍스트 복사</b> 후 패들렛 게시물에 붙여넣거나, <b>이미지 저장</b> 후 그림을 패들렛에 올려요.</p>
+    <div class="row"><button class="btn" id="copyBtn">📋 텍스트 복사</button><button class="btn ghost" id="pngBtn">🖼️ 이미지 저장</button></div>
+    <pre class="result" id="cardText"></pre>
+  </div>
+  <div class="row" style="justify-content:flex-end;margin-top:20px"><button class="btn ghost" id="resetBtn">↺ 처음부터 다시 쓰기</button></div>
+</main>
+
+<!-- 구글 설문지 제출용 숨은 양식 -->
+<form id="gform" method="POST" target="_blank" action="https://docs.google.com/forms/d/e/1FAIpQLSfvXP_ZigQ2ItVFpu5yOfzUKWbaY4IGNIb2D3QTxzM38mpi_A/formResponse" style="display:none"></form>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),2400);}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+const FORM_URL='https://docs.google.com/forms/d/e/1FAIpQLSfvXP_ZigQ2ItVFpu5yOfzUKWbaY4IGNIb2D3QTxzM38mpi_A/viewform';
+const PART=['발표 자료를 만들어 발표했다','조사는 했지만 발표 자료를 완성하지 못했다','조사와 발표 자료를 모두 하지 못했다'];
+
+/* 설문지 문항 (구글 설문지의 entry 번호와 연결)
+   show: 'all' | 'P'(발표한 학생) | 'N'(발표하지 못한 학생)
+   req: 이 페이지에서 확인하는 필수 여부, card: 패들렛 카드에 넣을지 */
+const ORDER=['1','2','2-1','3','4','5','6','7','7-1','7-2','7-3','8','9','10','11','12','13','14','15'];
+const Q={
+ '1':{t:'학번',type:'text',id:'1728706764',req:1,card:1,show:'all'},
+ '2':{t:'이름',type:'text',id:'1841738230',req:1,card:1,show:'all'},
+ '2-1':{t:'이번 질병 조사 발표에 어떻게 참여했나요?',type:'choice',col:1,id:'1068918108',opts:PART,req:1,card:1,show:'all'},
+ '3':{t:'내가 조사한(또는 조사하려던) 질병의 이름',type:'text',id:'845344683',req:1,card:1,show:'all'},
+ '4':{t:'이 질병과 가장 관련 있는 기관계',type:'choice',id:'1975164379',opts:['소화계','순환계','호흡계','배설계'],req:1,card:1,show:'all'},
+ '5':{t:'내 조사와 발표를 스스로 평가해 보세요. (1: 전혀 아니다 ~ 5: 매우 그렇다)',type:'grid',req:1,card:1,show:'P',rows:[
+   ['1304263534','질병의 원인과 증상을 정확하게 조사했다.'],
+   ['464179788','믿을 만한 자료(공공 기관, 전문 기관 등)를 찾아 출처를 밝혔다.'],
+   ['2090528623','질병과 소화계·순환계·호흡계·배설계의 연관성을 설명했다.'],
+   ['1588454249','친구들이 이해하기 쉽게 발표했다.']]},
+ '6':{t:'조사하면서 가장 어려웠던 점은 무엇이고, 어떻게 해결했나요?',type:'long',id:'1840831590',req:0,card:1,show:'P'},
+ '7':{t:'다시 발표한다면 무엇을 바꾸고 싶나요? 그 까닭은?',type:'long',id:'574727947',req:0,card:1,show:'P'},
+ '7-1':{t:'발표 자료를 완성하지 못한 까닭은 무엇인가요? 솔직하게 써 주세요.',type:'long',id:'721974772',req:1,card:1,show:'N'},
+ '7-2':{t:'조사하면서(또는 친구들의 발표를 들으며) 알게 된 것을 써 주세요.',type:'long',id:'474172853',req:1,card:1,show:'N'},
+ '7-3':{t:'다음 과제를 끝까지 해내려면 무엇을 다르게 하면 좋을까요? (나의 계획)',type:'long',id:'1850987365',req:1,card:1,show:'N'},
+ '8':{t:'내가 조사한 질병 또는 친구가 발표한 질병 하나를 골라, 그 질병이 생기면 다른 기관계에는 어떤 영향이 있을지 설명해 보세요.',type:'long',id:'853116805',req:1,card:1,show:'all',hint:"수업 시간에 그린 '물질 지도'를 떠올려 설명해 보세요. (예: 콩팥에 병이 생기면 → 요소가 혈액에 쌓이고 → 순환계를 통해 온몸에 퍼져요 …)"},
+ '9':{t:'[동료 평가] 가장 인상 깊었던 친구의 발표는 무엇인가요? (발표한 친구의 이름과 질병)',type:'text',id:'1831894714',req:1,card:0,show:'all'},
+ '10':{t:'[동료 평가] 그 발표가 인상 깊었던 까닭은 무엇인가요? (내용, 자료, 설명 방법, 소순호배와의 연결 등을 구체적으로)',type:'long',id:'1271691731',req:1,card:0,show:'all'},
+ '11':{t:'[동료 평가] 그 친구에게 칭찬 한마디와 더 좋아질 수 있는 조언 한마디를 남겨 주세요.',type:'long',id:'1104957045',req:0,card:0,show:'all'},
+ '12':{t:'이번 활동을 하고 나서 내 생활에서 바꾸고 싶은 습관이 있나요? 어떤 질병과 관련 있나요? (예: 아침 거르기, 짠 음식, 물 적게 마시기, 미세 먼지 많은 날 마스크 안 쓰기 등)',type:'long',id:'1304849586',req:1,card:1,show:'all'},
+ '13':{t:'이번 활동이 "우리 몸의 기관계는 서로 연결되어 있다"는 것을 이해하는 데 얼마나 도움이 되었나요?',type:'scale',id:'1896298191',req:1,card:1,show:'all',lo:'전혀 도움이 안 됐다',hi:'매우 도움이 됐다'},
+ '14':{t:'이번 수업에 대해 자신이 성장한 부분과 느낀점에 대해 써주세요.',type:'long',id:'1064659301',req:0,card:1,show:'all'},
+ '15':{t:'[동물과 에너지] 단원 전체 수업에 대해 피드백 해주세요.',type:'long',id:'929321376',req:1,card:0,show:'all'}};
+const GROUPS=[
+ ['👤 나의 정보',['1','2','2-1','3','4']],
+ ['🔍 내 조사와 발표 돌아보기',['5','6','7'],'P'],
+ ['🔍 이번 활동 돌아보기',['7-1','7-2','7-3'],'N'],
+ ['🔗 개념 연결하기',['8']],
+ ['🤝 동료 평가',['9','10','11']],
+ ['🌱 내 삶과 연결하기',['12','13','14','15']]];
+
+/* 저장 */
+const KEY='reflect_disease_v2';
+let A={};let SUBMITTED=false;
+try{const r=JSON.parse(localStorage.getItem(KEY)||'{}');A=r.A||{};SUBMITTED=!!r.sub;}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({A,sub:SUBMITTED}));}catch(e){}}
+function branch(){const i=PART.indexOf(A['2-1']);return i<0?null:(i===0?'P':'N');}
+function visible(k){const s=Q[k].show;return s==='all'||s===branch();}
+
+/* 화면 만들기 */
+function qHtml(k){const q=Q[k];let h=`<div class="card" id="c${k.replace('-','_')}"><div class="q">${k}. ${esc(q.t)}${q.req?'<span class="req">*</span>':''}${!q.card?' <span class="lock">🔒 선생님만</span>':''}</div>${q.hint?`<div class="hint">${esc(q.hint)}</div>`:''}`;
+  if(q.type==='text')h+=`<input type="text" data-k="${k}" value="${esc(A[k]||'')}" autocomplete="off">`;
+  if(q.type==='long')h+=`<textarea data-k="${k}">${esc(A[k]||'')}</textarea>`;
+  if(q.type==='choice')h+=`<div class="opts ${q.col?'col':''}">${q.opts.map(o=>`<button type="button" class="opt ${A[k]===o?'on':''}" data-c="${k}" data-v="${o}">${o}</button>`).join('')}</div>`;
+  if(q.type==='grid')h+=`<table class="grid"><tr><th></th>${[1,2,3,4,5].map(v=>`<th>${v}</th>`).join('')}</tr>${q.rows.map(([rid,rt],ri)=>`<tr><td>${esc(rt)}</td>${[1,2,3,4,5].map(v=>`<td><button type="button" class="dot ${String((A[k]||{})[ri])===String(v)?'on':''}" data-g="${k}" data-r="${ri}" data-v="${v}" aria-label="${esc(rt)} ${v}점">${v}</button></td>`).join('')}</tr>`).join('')}</table>`;
+  if(q.type==='scale')h+=`<div class="scale"><span class="lab">${q.lo}</span>${[1,2,3,4,5].map(v=>`<button type="button" class="dot ${String(A[k])===String(v)?'on':''}" data-s="${k}" data-v="${v}">${v}</button>`).join('')}<span class="lab">${q.hi}</span></div>`;
+  return h+'</div>';}
+function build(){
+  const b=branch();let h='';
+  GROUPS.forEach(([g,ks,need])=>{
+    if(need&&need!==b)return;
+    const allLock=ks.every(k=>!Q[k].card);
+    h+=`<div class="group">${g}${allLock?' <span class="lock">🔒 선생님만</span>':''}</div>`;
+    ks.forEach(k=>{h+=allLock?qHtml(k).replace(' <span class="lock">🔒 선생님만</span>',''):qHtml(k);});
+    if(g==='👤 나의 정보'&&!b)h+=`<div class="wait">👆 <b>2-1번</b>에 답하면 나에게 맞는 질문이 나타나요.</div>`;
+  });
+  $('#form').innerHTML=h;
+  document.querySelectorAll('[data-k]').forEach(e=>e.oninput=()=>{A[e.dataset.k]=e.value;changed();});
+  document.querySelectorAll('[data-c]').forEach(bt=>bt.onclick=()=>{const k=bt.dataset.c,before=branch();A[k]=bt.dataset.v;bt.parentNode.querySelectorAll('.opt').forEach(x=>x.classList.toggle('on',x===bt));
+    if(k==='2-1'&&branch()!==before){const y=window.scrollY;build();window.scrollTo({top:y});}changed();});
+  document.querySelectorAll('[data-g]').forEach(bt=>bt.onclick=()=>{const k=bt.dataset.g;A[k]=A[k]||{};A[k][bt.dataset.r]=bt.dataset.v;bt.closest('tr').querySelectorAll('.dot').forEach(x=>x.classList.toggle('on',x===bt));changed();});
+  document.querySelectorAll('[data-s]').forEach(bt=>bt.onclick=()=>{A[bt.dataset.s]=bt.dataset.v;bt.parentNode.querySelectorAll('.dot').forEach(x=>x.classList.toggle('on',x===bt));changed();});
+}
+function filled(k){const q=Q[k],v=A[k];if(q.type==='grid')return !!v&&q.rows.every((r,i)=>v[i]);return v!==undefined&&String(v).trim()!=='';}
+function changed(){save();
+  const ks=ORDER.filter(visible),done=ks.filter(filled).length;$('#progTxt').textContent=`${done} / ${ks.length}`;$('#progBar').style.width=(done/ks.length*100)+'%';
+  $('#cardText').textContent=cardText();
+  $('#step1').classList.toggle('done',SUBMITTED);
+}
+
+/* ① 구글 설문지로 제출 */
+$('#submitBtn').onclick=()=>{
+  document.querySelectorAll('.card.err').forEach(c=>c.classList.remove('err'));
+  const miss=ORDER.filter(k=>visible(k)&&Q[k].req&&!filled(k));const fb=$('#submitFb');
+  if(miss.length){miss.forEach(k=>{const c=$('#c'+k.replace('-','_'));if(c)c.classList.add('err');});
+    const first=$('#c'+miss[0].replace('-','_'));if(first)first.scrollIntoView({behavior:'smooth',block:'center'});
+    fb.className='fb show no';fb.innerHTML=`필수 질문 <b>${miss.join(', ')}번</b>에 아직 답하지 않았어요. 빨간 테두리를 확인해 주세요.`;return;}
+  if(SUBMITTED&&!confirm('이미 한 번 제출했어요. 고친 내용으로 한 번 더 제출할까요?'))return;
+  const f=$('#gform');f.innerHTML='';
+  const add=(name,val)=>{const i=document.createElement('input');i.type='hidden';i.name=name;i.value=val;f.appendChild(i);};
+  ORDER.forEach(k=>{const q=Q[k],v=A[k];if(!visible(k)||!filled(k))return;
+    if(q.type==='grid')q.rows.forEach(([rid],i)=>add('entry.'+rid,v[i]));else add('entry.'+q.id,String(v).trim());});
+  f.submit();
+  SUBMITTED=true;save();changed();
+  fb.className='fb show ok';fb.innerHTML=`✓ 제출 창이 열렸어요. 새 창에 <b>'응답이 기록되었습니다'</b>가 보이면 제출 완료예요. 이제 ② 패들렛에 카드를 올려 주세요.<br><span class="mini">새 창에 오류가 보이면 <a href="${FORM_URL}" target="_blank" rel="noopener">설문지를 직접 열어</a> 답을 옮겨 적고 선생님께 알려 주세요.</span>`;
+};
+
+/* ② 패들렛 카드 */
+function ansText(k){const q=Q[k],v=A[k];if(!filled(k))return '   -';
+  if(q.type==='grid')return q.rows.map((r,i)=>`   · ${r[1]} → ${v[i]}점`).join('\n');
+  if(q.type==='scale')return `   ${v}점 (5점 만점)`;return '   '+String(v).trim().replace(/\n/g,'\n   ');}
+function cardText(){
+  const b=branch();
+  const L=[`[소순호배 질병 조사 발표 성찰]`,`${A['1']||'학번'} ${A['2']||'이름'}`,``,`■ 참여: ${A['2-1']||'-'}`,`■ 질병: ${A['3']||'-'} (${A['4']||'-'})`,``];
+  const ks=b==='N'?['7-1','7-2','7-3','8','12','13','14']:['5','6','7','8','12','13','14'];
+  ks.forEach(k=>{L.push(`■ ${Q[k].t.replace(/\s*\(예:.*\)$/,'').replace(/\s*\(1:.*\)$/,'')}`);L.push(ansText(k));L.push('');});
+  return L.join('\n').trim();
+}
+$('#copyBtn').onclick=async()=>{const t=cardText();
+  try{await navigator.clipboard.writeText(t);toast('📋 복사했어요! 패들렛에 붙여넣기 하세요');}
+  catch(e){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('📋 복사했어요! 패들렛에 붙여넣기 하세요');}catch(e2){toast('복사가 안 되면 아래 글을 직접 드래그해서 복사하세요');}ta.remove();}};
+$('#pngBtn').onclick=()=>{
+  const text=cardText().split('\n');const W=900,P=44,font='"Malgun Gothic","Apple SD Gothic Neo",sans-serif';
+  const c=document.createElement('canvas');const x=c.getContext('2d');x.font=`500 20px ${font}`;
+  const lines=[];text.slice(2).forEach(l=>{if(!l){lines.push('');return;}let cur='';for(const ch of l){if(x.measureText(cur+ch).width>W-P*2){lines.push(cur);cur='   '+ch;}else cur+=ch;}lines.push(cur);});
+  const H=170+lines.length*32+P;c.width=W;c.height=H;
+  x.fillStyle='#fff';x.fillRect(0,0,W,H);x.fillStyle='#e4f6ec';x.fillRect(0,0,W,130);
+  x.fillStyle='#0f6347';x.font=`800 30px ${font}`;x.fillText('📝 질병 조사 발표 성찰 카드',P,58);
+  x.fillStyle='#1d2340';x.font=`700 22px ${font}`;x.fillText(`${A['1']||''} ${A['2']||''}`,P,100);
+  let y=170;lines.forEach(l=>{x.font=(l.startsWith('■')?'800 20px ':'500 20px ')+font;x.fillStyle=l.startsWith('■')?'#0f6347':'#1d2340';x.fillText(l,P,y);y+=32;});
+  const a=document.createElement('a');a.download=`성찰카드_${A['1']||'학번'}_${A['2']||'이름'}.png`;a.href=c.toDataURL('image/png');document.body.appendChild(a);a.click();a.remove();toast('🖼️ 이미지를 저장했어요! 패들렛에 올려 주세요');};
+$('#resetBtn').onclick=()=>{if(confirm('쓴 내용이 모두 지워져요. 계속할까요?')){A={};SUBMITTED=false;save();build();changed();$('#submitFb').className='fb';window.scrollTo({top:0});}};
+build();changed();
+</script>
+</body>
+</html>
